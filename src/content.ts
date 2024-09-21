@@ -36,6 +36,16 @@ const waitForElement = async (selector: string, timeout: number): Promise<HTMLEl
   throw new Error(`Element ${selector} not found after ${timeout}ms`);
 }
 
+const getAwscSessionData = (key: string): string => {
+  try {
+    const content = selectElement('meta[name="awsc-session-data"]')?.getAttribute('content') || '{}';
+    const awscSessionData = JSON.parse(content);
+    return (awscSessionData[key] as string) || '';
+  } catch {
+    return '';
+  }
+}
+
 const getOriginalAccountMenuButtonBackground = () => {
   return selectElement('span[data-testid="account-menu-button__background"]')
 }
@@ -62,6 +72,10 @@ const getAccountIdByRegex = (accountDetailMenu: HTMLElement) => {
 
 const getAccountId = async (): Promise<string | null | undefined> => {
   try {
+    const accountIdFromAwscSessionData = getAwscSessionData('accountId');
+    if (accountIdFromAwscSessionData) {
+      return accountIdFromAwscSessionData;
+    }
     const accountDetailMenu = await waitForElement('div[data-testid="account-detail-menu"]', 10000)
     return getAccountIdFromDescendantByDataTestidEqualsAwscCopyAccountId(accountDetailMenu) || getAccountIdByRegex(accountDetailMenu);
   } catch (e) {
@@ -71,7 +85,7 @@ const getAccountId = async (): Promise<string | null | undefined> => {
 }
 
 const getRegion = () => {
-  return document.getElementById('awsc-mezz-region')?.getAttribute('content')
+  return getAwscSessionData('infrastructureRegion') || document.getElementById('awsc-mezz-region')?.getAttribute('content')
 }
 
 const loadConfigList = async (): Promise<ConfigList | null> => {
@@ -204,7 +218,8 @@ const updateNavigationStyle = (
   // 4. Conversely, within Atoms, use the Descendent Selector to avoid the effects of AWS refactoring.
   // 5. Instead of specifying `path`, `g`, `circle` individually, use `svg > *`.
   const css = `
-  header[data-testid="awsc-nav-header"] nav {
+  header[data-testid="awsc-nav-header"] nav,
+  #skeleton-nav-awt-wrapper > div {
     background-color: ${navigationBackgroundColor} !important;
   }
   button[data-testid="aws-services-list-button"],

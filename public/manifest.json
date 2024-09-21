@@ -16,7 +16,7 @@
         "https://*.console.amazonaws-us-gov.com/*",
         "https://*.console.amazonaws.cn/*"
       ],
-      "run_at": "document_end"
+      "run_at": "document_start"
     },
     {
       "js": ["awsapps.js"],
